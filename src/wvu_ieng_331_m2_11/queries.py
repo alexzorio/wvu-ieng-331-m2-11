@@ -105,3 +105,47 @@ def get_best_customers(
             return con.execute(query, [start_date, end_date]).pl()
     except duckdb.Error as e:
         raise duckdb.Error(f"Failed to execute best customers query: {e}")
+
+
+def get_best_sellers(
+    db_path: Union[str, Path], start_date: str, end_date: str
+) -> pl.DataFrame:
+    """
+    Executes the best sellers query against DuckDB and returns a Polars DataFrame.
+
+    Args:
+        db_path (Union[str, Path]): Path to the DuckDB database file.
+        start_date (str): The start date for filtering (YYYY-MM-DD).
+        end_date (str): The end date for filtering (YYYY-MM-DD).
+
+    Returns:
+        pl.DataFrame: A Polars DataFrame containing the top sellers.
+
+    Raises:
+        FileNotFoundError: If the database file or SQL file does not exist.
+        ValueError: If start_date is after end_date.
+        OSError: If there is a system-level issue reading the SQL file.
+        duckdb.Error: If the SQL query fails to execute properly.
+    """
+    if start_date > end_date:
+        raise ValueError("start_date cannot be after end_date.")
+
+    db_path_obj = Path(db_path)
+    if not db_path_obj.exists():
+        raise FileNotFoundError(f"Database file not found: {db_path_obj}")
+
+    sql_file = SQL_DIR / "bestsellers.sql"
+
+    try:
+        with open(sql_file, "r", encoding="utf-8") as f:
+            query = f.read()
+    except FileNotFoundError:
+        raise FileNotFoundError(f"SQL file not found at: {sql_file}")
+    except OSError as e:
+        raise OSError(f"Failed to read SQL file {sql_file}: {e}")
+
+    try:
+        with duckdb.connect(str(db_path_obj)) as con:
+            return con.execute(query, [start_date, end_date]).pl()
+    except duckdb.Error as e:
+        raise duckdb.Error(f"Failed to execute best sellers query: {e}")
