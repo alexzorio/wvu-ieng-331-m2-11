@@ -7,7 +7,7 @@ import polars as pl
 # Define the base directory for your SQL files.
 # Adjust the .parent chain depending on where queries.py lives relative to the sql/ folder.
 # Example: If queries.py is in src/my_package/ and sql/ is at the repo root, use .parent.parent
-SQL_DIR = Path(__file__).resolve().parent.parent / "sql"
+SQL_DIR = Path(__file__).resolve().parent.parent.parent / "sql"
 
 
 def get_abc_analysis(
