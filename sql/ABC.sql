@@ -5,14 +5,17 @@ the next 15 geting a B
 and the rest getting a C
 
 */
-ATTACH 'olist.duckdb' AS olist;
-
 WITH ProductRevenue AS (
-    -- Find the revenue for each product
+    -- Find the revenue for each product, filtered by our date range parameters
     SELECT
-        product_id,
-        SUM(price) as total_revenue
-    FROM order_items
+        oi.product_id,
+        SUM(oi.price) as total_revenue
+    FROM order_items oi
+    JOIN orders o
+        ON oi.order_id = o.order_id
+    WHERE o.order_status NOT IN ('canceled', 'unavailable', 'invoiced')
+      AND o.order_purchase_timestamp >= $1 -- Start date parameter
+      AND o.order_purchase_timestamp <= $2 -- End date parameter
     GROUP BY 1
 ),
 RunningTotals AS (
@@ -24,14 +27,14 @@ RunningTotals AS (
         SUM(total_revenue) OVER () as grand_total
     FROM ProductRevenue
 )
--- Use when else statement to separate the different orders into their respective tiers by revenue percentage
+-- Use when else statement to separate the different orders into their respective tiers
 SELECT
     product_id,
     total_revenue,
     (cumulative_revenue / grand_total) * 100 as pct_of_total,
     CASE
-        WHEN (cumulative_revenue / grand_total) <= $1 THEN 'A'
-        WHEN (cumulative_revenue / grand_total) <= $2 THEN 'B'
+        WHEN (cumulative_revenue / grand_total) <= $3 THEN 'A' -- Tier A threshold
+        WHEN (cumulative_revenue / grand_total) <= $4 THEN 'B' -- Tier B threshold
         ELSE 'C'
     END as abc_tier
 FROM RunningTotals

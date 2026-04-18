@@ -4,20 +4,21 @@ on spending. We also want to rank customers based on the number of orders they p
 */
 
 -- Requires the olist.duckdb file to be in the same folder to run
-ATTACH 'olist.duckdb' AS olist;
-
 SELECT
     c.customer_unique_id, -- We are selecting customer_unique_id instead of customer_id because customer_id is a temp key made for each entry.
     SUM(op.payment_value) AS total_spent,
     COUNT(DISTINCT o.order_id) AS total_orders,
     DENSE_RANK() OVER (ORDER BY SUM(op.payment_value) DESC) AS customer_rank
-FROM olist.customers c -- Joining customers and orders
-JOIN olist.orders o
+FROM customers c
+JOIN orders o
     ON c.customer_id = o.customer_id
-JOIN olist.order_payments op -- Joining order_payments and orders
+JOIN order_payments op
     ON o.order_id = op.order_id
--- We only want to count orders that weren't canceled, unavailable, or invoiced. Only counting orders we know are completed.
-WHERE o.order_status NOT IN ('canceled', 'unavailable','invoiced')
+-- We only want to count orders that weren't canceled, unavailable, or invoiced.
+-- $1 and $2 act as our start and end date parameters from the CLI.
+WHERE o.order_status NOT IN ('canceled', 'unavailable', 'invoiced')
+  AND o.order_purchase_timestamp >= $1
+  AND o.order_purchase_timestamp <= $2
 GROUP BY
     c.customer_unique_id
 ORDER BY
