@@ -36,5 +36,4 @@ There was some confusion with the data as no matter how many different ways it w
 for the average days late. This is because the amount that the delivieries are late by are far outweighted by the
 time it is delivered early. So for some deliveris even though the number is negative showing average deliveries on time
 the majority of delivereis can still be late as long as one that was early was a lot earlier than the others were late.
-
 */
