@@ -5,11 +5,10 @@ The presence of
 
 */
 
-ATTACH 'olist.duckdb' AS olist;
 SELECT
     s.seller_state AS origin,
     c.customer_state AS destination,
-    -- The difference between acutal and predicted delivery time with + values showing lateness and - the opposite
+    -- The difference between actual and predicted delivery time with + values showing lateness and - the opposite
     ROUND(AVG(date_diff('day', o.order_estimated_delivery_date, o.order_delivered_customer_date)), 1) AS avg_days_late,
     -- The percent of orders that are late per route
     ROUND(
@@ -17,12 +16,18 @@ SELECT
         1
     ) AS late_percent,
     COUNT(*) AS total_orders
-FROM olist.orders o -- Join orders to get delivery dates and status
-JOIN olist.customers c ON o.customer_id = c.customer_id -- Join customers to get the destination state
-JOIN olist.order_items oi ON o.order_id = oi.order_id -- Join order items to get the seller_id
-JOIN olist.sellers s ON oi.seller_id = s.seller_id -- Join sellers to get the origin state
-WHERE o.order_status = 'delivered' -- Filter for delivered orders
+FROM orders o
+JOIN customers c
+    ON o.customer_id = c.customer_id
+JOIN order_items oi
+    ON o.order_id = oi.order_id
+JOIN sellers s
+    ON oi.seller_id = s.seller_id
+WHERE o.order_status = 'delivered'
   AND o.order_delivered_customer_date IS NOT NULL
+  -- $1 and $2 act as our start and end date parameters from the CLI
+  AND o.order_purchase_timestamp >= $1
+  AND o.order_purchase_timestamp <= $2
 GROUP BY 1, 2
 HAVING total_orders > 20 -- Keeps the data statistically significant
 ORDER BY avg_days_late DESC; -- Puts positive (late) numbers at the top
