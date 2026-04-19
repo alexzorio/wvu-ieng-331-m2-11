@@ -11,6 +11,8 @@ uv sync
 uv run wvu-ieng-331-m2-11
 uv run wvu-ieng-331-m2-11 --start-date 2017-01-01 --end-date 2018-01-01
 ```
+Also make sure that there is a "data" and "output" folder in your local cloned project. Data folder required olist.duckdb present for the pipeline to run.
+
 ## Parameters
 | Parameter | Type | Default | Description |
 |------------------------------------------|
