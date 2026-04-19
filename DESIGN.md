@@ -21,20 +21,26 @@ Why .sql files: Keeping SQL in its own `.sql` files rather than inline Python st
 
 ## Validation Logic
 
-For each validation check in `validation.py`, explain:
-- What it checks and why that check matters
-- What happens if it fails (halt vs. warning)
-- How you chose your thresholds (e.g., why 1,000 rows as a minimum)
+The `validation.py` module runs four checks using the `validate_database` function:
+1. Table Existence Check: Queries `information_schema.tables` to ensure all 9 Olist tables are present. Why it matters: A missing table will crash the pipeline's SQL joins.
+2. Null Checks: Uses `COUNT(column)` to verify that key columns (`order_id`, `customer_id`, etc.) aren't completely empty. Why it matters: Primary and foreign keys are essential; if they are null, relational joins will not work correctly or at all.
+3. Date Range Check: Queries the `MAX(order_purchase_timestamp)` to ensure the database doesn't contain dates in the future. Why it matters: Future dates indicate data corruption, time travel, or errors in data entry.
+4. Row Count Thresholds: Verifies core tables have at least 1,000 rows. Why it matters: It ensures we are not analyzing an empty or small test table. I chose 1,000 because it is small enough to pass subset testing, but large enough to prove the table isn't just a handful of random rows thrown in to make the table not empty.
+
+Failure Action: If any check fails, the pipeline uses `loguru` to issue a `WARNING` in the terminal, but it returns `False` and does not halt the script. This allows the pipeline to process potentially incomplete databases rather than stopping the process or crashing. It is very apparent in the terminal if you are running an incomplete database through the script.
 
 ## Error Handling
 
-Pick 2 specific `try/except` blocks in your code and explain:
-- What exception you catch and why that specific type
-- What the code does when the exception is raised
-- What would happen to the user if you used a bare `except:` instead
+I utilized specific exception types in `pipeline.py` to handle expected failure points:
+1. `except FileNotFoundError as e:` - What it catches: Triggered if the user inputs a `--db-path` that doesn't actually lead to an actual file.
+   - What the code does: It uses `loguru` to log an error stating that the file is missing, then raises the error to stop the script.
+2. `except duckdb.Error as e:` - What it catches: Triggers if duckDB encounters a SQL syntax error, missing table, or mismatched schema during a query.
+   - What the code does: It logs the specific database error so the user knows it was a database issue and not a Python logic issue.
+
+Why not a bare `except:`: Using a bare `except:` catches literally everything. This makes the script nearly impossible to kill manually when unexpected errors occur and completely obscures the actual root cause of the error, making debugging the issue much more difficult than it needs to be.
 
 ## Scaling & Adaptation
 
-Answer both:
-1. If the Olist dataset grew to 10 million orders, what part of your pipeline would break or slow down first? What would you change?
-2. If you needed to add a third output format (e.g., a JSON API response), where in your code would you add it and what functions would you modify?
+1. **Scaling:** If the dataset grew to 10 million orders, the part of my code that would crash first is the creation of the Altair chart. Right now, the pipeline converts the data into a Pandas dataframe to then draw the graph (`df_summary.to_pandas()`). If we tried to do that with 10 million rows, it would probably eat up all of most people's computer memory and freeze. To fix this, I would make sure to do all the computation and table summaries inside the duckDB SQL query first. That way, Python only has to graph a pre-calculated summary table instead of trying to load millions of individual rows into memory.
+
+2. **Adaptation (JSON Output):** If I needed to save a new output format like a JSON file, I would need to change the `pipeline.py` script. Specifically, I would go to the very bottom where the output files are generated and add code that would look like: `df_summary.write_json(output_dir / "summary.json")`. I would not have to change the `queries.py` or `validation.py` files. The project was built output last in first place so adding a new way to save the data doesn't require any changes to how the data is queried or validated.
