@@ -7,17 +7,20 @@ requires-python = ">=3.13"
 authors = [{ name = "Alex Zorio", email = "apz00001@mix.wvu.edu" }]
 dependencies = [
   "altair>=6.0.0",
+  "argparse>=1.4.0",
   "basedpyright>=1.39.0",
   "duckdb>=1.5.2",
   "loguru>=0.7.3",
+  "pandas>=3.0.2",
   "pathlib>=1.0.1",
   "polars>=1.39.3",
+  "pyarrow>=23.0.1",
   "ruff>=0.15.9",
   "typing>=3.10.0.0",
 ]
 
 [project.scripts]
-wvu-ieng-331-m2-11 = "wvu_ieng_331_m2_11:main"
+wvu-ieng-331-m2-11 = "wvu_ieng_331_m2_11.pipeline:main"
 
 [build-system]
 requires = ["uv_build>=0.10.8,<0.11.0"]
