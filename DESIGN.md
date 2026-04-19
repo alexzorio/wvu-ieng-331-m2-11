@@ -37,7 +37,7 @@ I utilized specific exception types in `pipeline.py` to handle expected failure 
 2. `except duckdb.Error as e:` - What it catches: Triggers if duckDB encounters a SQL syntax error, missing table, or mismatched schema during a query.
    - What the code does: It logs the specific database error so the user knows it was a database issue and not a Python logic issue.
 
-Why not a bare `except:`: Using a bare `except:` catches literally everything. This makes the script nearly impossible to kill manually when unexpected errors occur and completely obscures the actual root cause of the error, making debugging the issue much more difficult than it needs to be.
+Why not a bare `except:`: Using a bare `except:` catches everything that can go wrong. This makes the script very difficult to stop when unexpected errors occur and does not help to identify the cause of the error. This makes debugging the issues much more difficult than it needs to be.
 
 ## Scaling & Adaptation
 
